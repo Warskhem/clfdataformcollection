@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLF Monthly Reporting System</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#2d3748;font-size:13px}
+  .header{background:linear-gradient(135deg,#1a365d,#2b6cb0);color:#fff;padding:20px 30px;text-align:center}
+  .header h1{font-size:20px;font-weight:700;letter-spacing:.5px}
+  .header p{font-size:12px;margin-top:4px;opacity:.85}
+  .meta-bar{background:#fff;padding:14px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;border-bottom:2px solid #e2e8f0;position:sticky;top:0;z-index:100;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .meta-bar .field{display:flex;flex-direction:column;gap:4px;min-width:180px}
+  .meta-bar label{font-size:11px;font-weight:600;color:#4a5568;text-transform:uppercase;letter-spacing:.5px}
+  .meta-bar select,.meta-bar input{padding:7px 10px;border:1.5px solid #cbd5e0;border-radius:6px;font-size:13px;background:#f7fafc;transition:border .2s}
+  .meta-bar select:focus,.meta-bar input:focus{border-color:#3182ce;outline:none;background:#fff}
+  .meta-bar select.error,.meta-bar input.error{border-color:#e53e3e;background:#fff5f5}
+  .container{max-width:1100px;margin:20px auto;padding:0 16px 40px}
+  .section{background:#fff;border-radius:10px;margin-bottom:20px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .section-header{padding:12px 20px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+  .section-header h2{font-size:14px;font-weight:700;letter-spacing:.3px}
+  .section-header .badge{background:rgba(255,255,255,.25);border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600}
+  .section-header .toggle{margin-left:auto;font-size:18px;transition:transform .3s}
+  .section-header.collapsed .toggle{transform:rotate(-90deg)}
+  .s1{background:linear-gradient(90deg,#2b6cb0,#3182ce);color:#fff}
+  .s2{background:linear-gradient(90deg,#276749,#38a169);color:#fff}
+  .s3{background:linear-gradient(90deg,#744210,#d69e2e);color:#fff}
+  .s4{background:linear-gradient(90deg,#702459,#b83280);color:#fff}
+  .s5{background:linear-gradient(90deg,#234e52,#319795);color:#fff}
+  .s6{background:linear-gradient(90deg,#44337a,#6b46c1);color:#fff}
+  .s7{background:linear-gradient(90deg,#c05621,#ed8936);color:#fff}
+  .section-body{padding:0 0 8px}
+  .subsection{padding:6px 16px 2px;border-left:3px solid #e2e8f0;margin:8px 16px 4px;border-radius:0 6px 6px 0;background:#f7fafc}
+  .subsection-title{font-size:11px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:.6px;padding:6px 0 4px}
+  .row{display:grid;grid-template-columns:32px 1fr 200px;align-items:center;gap:0;border-bottom:1px solid #edf2f7;padding:0 16px;min-height:38px}
+  .row:last-child{border-bottom:none}
+  .row:hover{background:#f7fafc}
+  .row .sl{color:#a0aec0;font-size:11px;text-align:center}
+  .row .label{padding:6px 10px 6px 6px;font-size:12.5px;color:#2d3748;line-height:1.4}
+  .row .label .sub{font-size:11px;color:#718096}
+  .row input[type=number],.row input[type=text],.row input[type=date],.row textarea{width:100%;padding:5px 9px;border:1.5px solid #e2e8f0;border-radius:5px;font-size:12.5px;background:#fff;transition:border .2s}
+  .row input:focus,.row textarea:focus{border-color:#3182ce;outline:none}
+  .row input.error,.row textarea.error{border-color:#e53e3e;background:#fff5f5}
+  .row input.ok{border-color:#38a169}
+  .row textarea{resize:vertical;min-height:34px;font-family:inherit}
+  .cb-row{display:flex;flex-direction:column;padding:12px 16px;border-bottom:1px solid #edf2f7;transition:background .2s}
+  .cb-row:hover{background:#f7fafc}
+  .cb-row .cb-header{display:flex;align-items:center;margin-bottom:10px;width:100%}
+  .cb-row .cb-header .sl{color:#a0aec0;font-size:11px;width:32px;text-align:center;display:inline-block;flex-shrink:0}
+  .cb-row .cb-header .label{font-size:12.5px;color:#2d3748;font-weight:600}
+  .checkbox-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding-left:32px;width:100%}
+  .checkbox-grid label{font-size:12.5px;color:#4a5568;display:flex;align-items:center;gap:8px;cursor:pointer;line-height:1.3}
+  .checkbox-grid input[type="checkbox"]{width:15px;height:15px;accent-color:#2b6cb0;cursor:pointer;flex-shrink:0}
+  .actions{display:flex;justify-content:center;gap:14px;padding:24px 16px;flex-wrap:wrap}
+  .btn{padding:10px 28px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+  .btn-primary{background:#2b6cb0;color:#fff}
+  .btn-primary:hover{background:#1a4a8a;transform:translateY(-1px)}
+  .btn-success{background:#276749;color:#fff}
+  .btn-success:hover{background:#1a4a30;transform:translateY(-1px)}
+  .btn-reset{background:#e2e8f0;color:#4a5568}
+  .btn-reset:hover{background:#cbd5e0}
+  .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-weight:600;font-size:13px;z-index:999;display:none;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+  .toast.success{background:#276749;color:#fff}
+  .toast.error{background:#c53030;color:#fff}
+  .progress-bar{height:4px;background:#e2e8f0;position:sticky;top:68px;z-index:99}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#3182ce,#38a169);width:0%;transition:width .3s}
+  .required-star{color:#e53e3e;margin-left:2px}
+  .info-tip{font-size:10px;color:#718096;display:block;margin-top:1px}
+  @media(max-width:600px){
+    .row{grid-template-columns:24px 1fr 140px}
+    .meta-bar{flex-direction:column}
+    .meta-bar .field{min-width:100%}
+    .checkbox-grid{padding-left:24px;grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 CLF Monthly Reporting System</h1>
+  <p>West Khasi Hills District — Data Collection Form | Fill all required fields before submitting</p>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="meta-bar" id="metaBar">
+  <div class="field">
+    <label>Block Name <span class="required-star">*</span></label>
+    <select id="blockName" onchange="updateCLFList();validate(this,'select')">
+      <option value="">-- Select Block --</option>
+      <option>Mawshynrut</option>
+      <option>Nongstoin</option>
+      <option>Rambrai</option>
+      <option>Shallang</option>
+      <option>Ri-Muliang</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>CLF Name <span class="required-star">*</span></label>
+    <select id="clfName" onchange="validate(this,'select')">
+      <option value="">-- Select Block First --</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Reporting Month <span class="required-star">*</span></label>
+    <input type="month" id="reportMonth" onchange="validate(this,'month')">
+  </div>
+  <div class="field">
+    <label>Reported By <span class="required-star">*</span></label>
+    <input type="text" id="reportedBy" placeholder="Full Name" onblur="validate(this,'text')">
+  </div>
+  <div class="field">
+    <label>Date of Submission <span class="required-star">*</span></label>
+    <input type="date" id="submissionDate" onchange="validate(this,'date')">
+  </div>
+</div>
+
+<div class="container" id="formContainer">
+
+<div class="section">
+  <div class="section-header s1" onclick="toggleSection(this)">
+    <span>💰</span><h2>1. Financial Report</h2>
+    <span class="badge">20 Indicators</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body">
+    <div class="row"><span class="sl"></span><span class="label" style="font-weight:600;color:#2b6cb0">General Financial Indicators</span><span></span></div>
+    <div class="row"><span class="sl">1</span><span class="label">No. of Loan Sanctioned</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of Loan Sanctioned"></div>
+    <div class="row"><span class="sl">2</span><span class="label">Amount Sanctioned <span class="info-tip">In ₹ (Rupees)</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Amount Sanctioned"></div>
+    <div class="row"><span class="sl">3</span><span class="label">Loan Repayment <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Loan Repayment"></div>
+    <div class="row"><span class="sl">4</span><span class="label">Defaulter Loan Repayment <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Defaulter Loan Repayment"></div>
+    <div class="row"><span class="sl">5</span><span class="label">No. of SHG Having Active Loan at Bank/CLF</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of SHG Having Active Loan"></div>
+    <div class="row"><span class="sl">6</span><span class="label">No. of SHG Having NPA</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of SHG Having NPA"></div>
+    <div class="row"><span class="sl">7</span><span class="label">Receipt A/c <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Receipt"></div>
+    <div class="row"><span class="sl">8</span><span class="label">Payment A/c <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Payment"></div>
+    <div class="row"><span class="sl">9</span><span class="label">Loan Demand Principal (CIF) <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Loan Demand Principal (CIF)"></div>
+    <div class="row"><span class="sl">10</span><span class="label">Loan Received Principal (CIF) <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Loan Received Principal (CIF)"></div>
+    <div class="row"><span class="sl">11</span><span class="label">Interest Demand (CIF) <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Interest Demand (CIF)"></div>
+    <div class="row"><span class="sl">12</span><span class="label">Interest Received <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Interest Received"></div>
+    <div class="row"><span class="sl">13</span><span class="label">Idle fund <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Idle fund"></div>
+    <div class="row"><span class="sl">14</span><span class="label">Loan Outstanding <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Loan Outstanding"></div>
+    <div class="subsection">
+      <div class="subsection-title">📥 Fund Received from Mission</div>
+      <div class="row"><span class="sl">15</span><span class="label">CIF from Mission <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="CIF from Mission"></div>
+      <div class="row"><span class="sl">16</span><span class="label">CIF Returned from VO <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="CIF Returned from VO"></div>
+      <div class="row"><span class="sl">17</span><span class="label">VGF <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="VGF"></div>
+      <div class="row"><span class="sl">18</span><span class="label">PMFME <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="PMFME Fund"></div>
+      <div class="row"><span class="sl">19</span><span class="label">MKSP <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="MKSP"></div>
+      <div class="row"><span class="sl">20</span><span class="label">SVEP <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="SVEP"></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header s2" onclick="toggleSection(this)">
+    <span>📈</span><h2>2. M&E Report</h2>
+    <span class="badge">9 Indicators</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body">
+    <div class="row"><span class="sl">1</span><span class="label">No. of SHG in CLF</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of SHG in CLF"></div>
+    <div class="row"><span class="sl">2</span><span class="label">No. of Members Having Aadhaar</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of Members Having Aadhaar"></div>
+    <div class="row"><span class="sl">3</span><span class="label">No. of SHGs Completed LokOS Profiling</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of SHGs Completed LokOS Profiling"></div>
+    <div class="row"><span class="sl">4</span><span class="label">No. of SHGs Completed Transaction</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of SHGs Completed Transaction"></div>
+    <div class="row"><span class="sl">5</span><span class="label">No. of VOs Completed LokOS Profiling</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of VOs Completed LokOS Profiling"></div>
+    <div class="row"><span class="sl">6</span><span class="label">No. of VOs Completed Transaction</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of VOs Completed Transaction"></div>
+    <div class="row"><span class="sl">7</span><span class="label">No. of Cadre Registered in LokOS</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of Cadre Registered in LokOS"></div>
+    <div class="row"><span class="sl">8</span><span class="label">No. of VOs having Bank A/C</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of VOs having Bank A/C"></div>
+    <div class="row"><span class="sl">9</span><span class="label">No. of SHGs having Bank A/C</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of SHGs having Bank A/C"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header s3" onclick="toggleSection(this)">
+    <span>🏫</span><h2>3. IBCB Report</h2>
+    <span class="badge">30 Indicators</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body">
+    <div class="subsection">
+      <div class="subsection-title">📚 Training Received</div>
+      <div class="cb-row">
+        <div class="cb-header"><span class="sl">1</span><span class="label">Training Received by CLF</span></div>
+        <div class="checkbox-grid checkbox-group" data-label="Training Received by CLF">
+          <label><input type="checkbox" value="Visioning Module – I"> Visioning Module – I</label>
+          <label><input type="checkbox" value="Visioning Module – II"> Visioning Module – II</label>
+          <label><input type="checkbox" value="Visioning Module – III"> Visioning Module – III</label>
+          <label><input type="checkbox" value="Leadership Training"> Leadership Training</label>
+          <label><input type="checkbox" value="Sub-Committee Training"> Sub-Committee Training</label>
+          <label><input type="checkbox" value="HR Management Training"> HR Management Training</label>
+          <label><input type="checkbox" value="Financial Management (Credit Management)"> Financial Mgt (Credit Mgt)</label>
+          <label><input type="checkbox" value="Legal Compliance Training"> Legal Compliance Training</label>
+          <label><input type="checkbox" value="CLF Annual Action Plan"> CLF Annual Action Plan</label>
+          <label><input type="checkbox" value="CLF Business Development Plan"> CLF Business Development Plan</label>
+          <label><input type="checkbox" value="CLF Books of Accounts Training"> CLF Books of Accounts</label>
+          <label><input type="checkbox" value="Governance SOP"> Governance SOP</label>
+          <label><input type="checkbox" value="Financial Management – SOP"> Financial Management – SOP</label>
+          <label><input type="checkbox" value="Training on HR, Admin & Office Management"> HR, Admin & Office Mgt</label>
+        </div>
+      </div>
+      <div class="cb-row">
+        <div class="cb-header"><span class="sl">2</span><span class="label">Training Received by VO</span></div>
+        <div class="checkbox-grid checkbox-group" data-label="Training Received by VO">
+          <label><input type="checkbox" value="Membership Training"> Membership Training</label>
+          <label><input type="checkbox" value="Governance Training"> Governance Training</label>
+          <label><input type="checkbox" value="Leadership Training"> Leadership Training</label>
+          <label><input type="checkbox" value="Detailed Book Keeping Training"> Detailed Book Keeping</label>
+          <label><input type="checkbox" value="VO Sub-Committee Training"> VO Sub-Committee</label>
+          <label><input type="checkbox" value="VO Management and Financial Policy Training"> VO Mgt & Financial Policy</label>
+          <label><input type="checkbox" value="VO AAP & BDP"> VO AAP & BDP</label>
+        </div>
+      </div>
+      <div class="cb-row">
+        <div class="cb-header"><span class="sl">3</span><span class="label">Training Received by SHG</span></div>
+        <div class="checkbox-grid checkbox-group" data-label="Training Received by SHG">
+          <label><input type="checkbox" value="SHG Membership Training"> SHG Membership Training</label>
+          <label><input type="checkbox" value="MCP Training"> MCP Training</label>
+          <label><input type="checkbox" value="Book Keeping Refresher Training"> Book Keeping Refresher</label>
+        </div>
+      </div>
+      <div class="cb-row">
+        <div class="cb-header"><span class="sl">4</span><span class="label">Training Received by Cadres</span></div>
+        <div class="checkbox-grid checkbox-group" data-label="Training Received by Cadres">
+          <label><input type="checkbox" value="Transaction"> Transaction</label>
+          <label><input type="checkbox" value="Bookkeeping"> Bookkeeping</label>
+        </div>
+      </div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">👩 Cadre Counts</div>
+      <div class="row"><span class="sl">5</span><span class="label">AW (Active Woman)</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre AW"></div>
+      <div class="row"><span class="sl">6</span><span class="label">MBK</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre MBK"></div>
+      <div class="row"><span class="sl">7</span><span class="label">MCP</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre MCP"></div>
+      <div class="row"><span class="sl">8</span><span class="label">BRT</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre BRT"></div>
+      <div class="row"><span class="sl">9</span><span class="label">CGHA</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre CGHA"></div>
+      <div class="row"><span class="sl">10</span><span class="label">LRP</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre LRP"></div>
+      <div class="row"><span class="sl">11</span><span class="label">Bank Sakhi</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre Bank Sakhi"></div>
+      <div class="row"><span class="sl">12</span><span class="label">Financial Literacy Cadre</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre Financial Literacy"></div>
+      <div class="row"><span class="sl">13</span><span class="label">Krishi Sakhi</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre Krishi Sakhi"></div>
+      <div class="row"><span class="sl">14</span><span class="label">Pashu Sakhi</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre Pashu Sakhi"></div>
+      <div class="row"><span class="sl">15</span><span class="label">CRP-EP</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre CRP-EP"></div>
+      <div class="row"><span class="sl">16</span><span class="label">ACRP</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre ACRP"></div>
+      <div class="row"><span class="sl">17</span><span class="label">MIS Cadre</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre MIS"></div>
+      <div class="row"><span class="sl">18</span><span class="label" style="font-weight:600;color:#2b6cb0">ICRP</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Cadre ICRP"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">🏅 SHG Grading</div>
+      <div class="row"><span class="sl">19</span><span class="label">SHG Grade-A</span><input type="number" min="0" placeholder="0" class="num-field" data-label="SHG Grade A"></div>
+      <div class="row"><span class="sl">20</span><span class="label">SHG Grade-B</span><input type="number" min="0" placeholder="0" class="num-field" data-label="SHG Grade B"></div>
+      <div class="row"><span class="sl">21</span><span class="label">SHG Grade-C</span><input type="number" min="0" placeholder="0" class="num-field" data-label="SHG Grade C"></div>
+      <div class="row"><span class="sl">22</span><span class="label">SHG Grade-D</span><input type="number" min="0" placeholder="0" class="num-field" data-label="SHG Grade D"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">🏅 VO Grading</div>
+      <div class="row"><span class="sl">23</span><span class="label">VO Grade-A</span><input type="number" min="0" placeholder="0" class="num-field" data-label="VO Grade A"></div>
+      <div class="row"><span class="sl">24</span><span class="label">VO Grade-B</span><input type="number" min="0" placeholder="0" class="num-field" data-label="VO Grade B"></div>
+      <div class="row"><span class="sl">25</span><span class="label">VO Grade-C</span><input type="number" min="0" placeholder="0" class="num-field" data-label="VO Grade C"></div>
+      <div class="row"><span class="sl">26</span><span class="label">VO Grade-D</span><input type="number" min="0" placeholder="0" class="num-field" data-label="VO Grade D"></div>
+    </div>
+    <div class="row"><span class="sl">27</span><span class="label">No. of SHG Completed Annual Audit</span><input type="number" min="0" placeholder="0" class="num-field" data-label="SHG Annual Audit Completed"></div>
+    <div class="row"><span class="sl">28</span><span class="label">No. of VO Completed Annual Audit</span><input type="number" min="0" placeholder="0" class="num-field" data-label="VO Annual Audit Completed"></div>
+    <div class="row"><span class="sl">29</span><span class="label">No. of SHG Completed MCP</span><input type="number" min="0" placeholder="0" class="num-field" data-label="SHG Completed MCP"></div>
+    <div class="row"><span class="sl">30</span><span class="label">No. of Functional Sub Committee</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Functional Sub Committee"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header s4" onclick="toggleSection(this)">
+    <span>🤱</span><h2>4. SISD Report</h2>
+    <span class="badge">13 Indicators</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body">
+    <div class="subsection">
+      <div class="subsection-title">👥 SHG Formation</div>
+      <div class="row"><span class="sl">1</span><span class="label">Newly Formed SHG</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Newly Formed SHG"></div>
+      <div class="row"><span class="sl">2</span><span class="label">Mobilized in Existing SHG</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Mobilized in Existing SHG"></div>
+      <div class="row"><span class="sl">3</span><span class="label">Special SHG (Elderly, PWD, Adolescence)</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Special SHG"></div>
+    </div>
+    <div class="row"><span class="sl">4</span><span class="label">Follow Up of Pregnant Women</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Follow Up Pregnant Women"></div>
+    <div class="row"><span class="sl">5</span><span class="label">VRF Utilization Report (Cash/Kind)</span><input type="text" placeholder="Describe utilization..." class="num-field" data-label="VRF Utilization" data-type="text"></div>
+    <div class="row"><span class="sl">6</span><span class="label">FNHW Training</span><input type="number" min="0" placeholder="0" class="num-field" data-label="FNHW Training"></div>
+    <div class="row"><span class="sl">7</span><span class="label">Child Cadre Support</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Child Cadre Support"></div>
+    <div class="row"><span class="sl">8</span><span class="label">Transit Home Report</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Transit Home Report"></div>
+    <div class="row"><span class="sl">9</span><span class="label">FNHW Monthly Agenda Discussion</span><input type="number" min="0" placeholder="0" class="num-field" data-label="FNHW Monthly Agenda"></div>
+    <div class="row"><span class="sl">10</span><span class="label">Community Event</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Community Event"></div>
+    <div class="row"><span class="sl">11</span><span class="label">VHND Programme</span><input type="number" min="0" placeholder="0" class="num-field" data-label="VHND Programme"></div>
+    <div class="row"><span class="sl">12</span><span class="label">VPRP Demand and Realization</span><input type="number" min="0" placeholder="0" class="num-field" data-label="VPRP Demand Realization"></div>
+    <div class="row"><span class="sl">13</span><span class="label">Gram Sabha Meeting (Submission of VPRP Demand)</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Gram Sabha Meeting"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header s7" onclick="toggleSection(this)">
+    <span>🏦</span><h2>5. Financial Inclusion Report</h2>
+    <span class="badge">6 Indicators</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body">
+    <div class="subsection">
+      <div class="subsection-title">🛡️ Insurance Enrollments</div>
+      <div class="row"><span class="sl">1</span><span class="label">No. of PMJJBY</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of PMJJBY"></div>
+      <div class="row"><span class="sl">2</span><span class="label">No. of PMSBY</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of PMSBY"></div>
+      <div class="row"><span class="sl">3</span><span class="label">No. of MHIS</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of MHIS"></div>
+      <div class="row"><span class="sl">4</span><span class="label">No. of APY</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of APY"></div>
+    </div>
+    <div class="row"><span class="sl">5</span><span class="label">No. of SHGs Avail Loan From Bank</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of SHGs Avail Loan From Bank"></div>
+    <div class="row"><span class="sl">6</span><span class="label">No. of FLC Conducted at Saksham Center</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No. of FLC Conducted at Saksham Center"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header s5" onclick="toggleSection(this)">
+    <span>🌾</span><h2>6. Livelihoods Report</h2>
+    <span class="badge">44 Indicators</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body">
+    <div class="subsection">
+      <div class="subsection-title">🔑 Key Indicators</div>
+      <div class="row"><span class="sl">1</span><span class="label">Training on Agriculture/Horticulture Activities</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Training Agri/Horti"></div>
+      <div class="row"><span class="sl">2</span><span class="label">No. of Mahila Kisan on Livestock Intervention</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Livestock Intervention"></div>
+      <div class="row"><span class="sl">3</span><span class="label">No. of Household Initiated Agri Nutri Garden</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Agri Nutri Garden HH"></div>
+      <div class="row"><span class="sl">4</span><span class="label">No. of Villages Covered under Farm Livelihood</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Villages Farm Livelihood"></div>
+      <div class="row"><span class="sl">5</span><span class="label">No. of Krishi Sakhi</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Krishi Sakhi"></div>
+      <div class="row"><span class="sl">6</span><span class="label">No. of Pashu Sakhi</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Pashu Sakhi"></div>
+      <div class="row"><span class="sl">7</span><span class="label">Formation of Producer Group</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Producer Group Formation"></div>
+      <div class="row"><span class="sl">8</span><span class="label">No. of Mahila Kisan Mobilised under PG</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Mobilised under PG"></div>
+      <div class="row"><span class="sl">9</span><span class="label">No. of Udhyog Sakhi</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Udhyog Sakhi"></div>
+      <div class="row"><span class="sl">10</span><span class="label">No. of Mahila Kisan Initiated Natural Farming</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Natural Farming"></div>
+      <div class="row"><span class="sl">11</span><span class="label">Area Covered under Natural Farming <span class="info-tip">In acres</span></span><input type="number" min="0" step="0.01" placeholder="0.00" class="num-field" data-label="Area Natural Farming (acres)"></div>
+      <div class="row"><span class="sl">12</span><span class="label">No. of Villages Covered under Livestock Intervention</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Villages Livestock Intervention"></div>
+      <div class="row"><span class="sl">13</span><span class="label">No. of Villages Covered under Organic Farming</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Villages Organic Farming"></div>
+      <div class="row"><span class="sl">14</span><span class="label">No. of Farm Entrepreneur Developed</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Farm Entrepreneur"></div>
+      <div class="row"><span class="sl">15</span><span class="label">No. of Mahila Kisan Supported under Pig Insurance</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Pig Insurance"></div>
+      <div class="row"><span class="sl">16</span><span class="label">No. of Pig Insured</span><input type="number" min="0" placeholder="0" class="num-field" data-label="No of Pig Insured"></div>
+      <div class="row"><span class="sl">17</span><span class="label">No. of Mahila Kisan Benefitted with KVK</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK KVK"></div>
+      <div class="row"><span class="sl">18</span><span class="label">No. of Mahila Kisan Benefitted with A.H Veterinary</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK AH Veterinary"></div>
+      <div class="row"><span class="sl">19</span><span class="label">No. of Mahila Kisan Benefitted with Agriculture</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Agriculture"></div>
+      <div class="row"><span class="sl">20</span><span class="label">No. of Mahila Kisan Benefitted with Horticulture</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Horticulture"></div>
+      <div class="row"><span class="sl">21</span><span class="label">No. of Mahila Kisan Benefitted with Fisheries</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Fisheries"></div>
+      <div class="row"><span class="sl">22</span><span class="label">No. of Mahila Kisan Benefitted with ATMA</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK ATMA"></div>
+      <div class="row"><span class="sl">23</span><span class="label">No. of Mahila Kisan Benefitted with MGNREGA</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK MGNREGA"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">🌿 Integrated Farming Cluster (IFC)</div>
+      <div class="row"><span class="sl">1</span><span class="label">No. of Villages Covered</span><input type="number" min="0" placeholder="0" class="num-field" data-label="IFC Villages Covered"></div>
+      <div class="row"><span class="sl">2</span><span class="label">No. of Farmers Practicing Natural Farming under IFC</span><input type="number" min="0" placeholder="0" class="num-field" data-label="IFC Natural Farming Farmers"></div>
+      <div class="row"><span class="sl">3</span><span class="label">Area Covered in Natural Farming <span class="info-tip">In acres</span></span><input type="number" min="0" step="0.01" placeholder="0.00" class="num-field" data-label="IFC Natural Farming Area (acres)"></div>
+      <div class="row"><span class="sl">4</span><span class="label">No. of Input Shop</span><input type="number" min="0" placeholder="0" class="num-field" data-label="IFC Input Shop"></div>
+      <div class="row"><span class="sl">5</span><span class="label">No. of Processing Centres</span><input type="number" min="0" placeholder="0" class="num-field" data-label="IFC Processing Centres"></div>
+      <div class="row"><span class="sl">6</span><span class="label">No. of Entrepreneurs Promoted</span><input type="number" min="0" placeholder="0" class="num-field" data-label="IFC Entrepreneurs"></div>
+      <div class="row"><span class="sl">7</span><span class="label">No. of Producer Group Promoted for Agri/Horti</span><input type="number" min="0" placeholder="0" class="num-field" data-label="IFC PG Agri/Horti"></div>
+      <div class="row"><span class="sl">8</span><span class="label">No. of Producer Group Promoted for Livestock</span><input type="number" min="0" placeholder="0" class="num-field" data-label="IFC PG Livestock"></div>
+      <div class="row"><span class="sl">9</span><span class="label">No. of PG Received Funds</span><input type="number" min="0" placeholder="0" class="num-field" data-label="IFC PG Received Funds"></div>
+      <div class="row"><span class="sl">10</span><span class="label">No. of Business Plan Developed under PG</span><input type="number" min="0" placeholder="0" class="num-field" data-label="IFC Business Plan PG"></div>
+      <div class="row"><span class="sl">11</span><span class="label">No. of IFC Models under the Cluster</span><input type="number" min="0" placeholder="0" class="num-field" data-label="IFC Models"></div>
+      <div class="row"><span class="sl">12</span><span class="label">Type of Model</span><input type="text" placeholder="Describe model type..." class="num-field" data-label="IFC Type of Model" data-type="text"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">💳 Mahila Kisan Taking Loan</div>
+      <div class="row"><span class="sl">1</span><span class="label">No. of MK Taking Loan on Livestock from CIF</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Loan Livestock CIF (No)"></div>
+      <div class="row"><span class="sl">2</span><span class="label">Total Loan Amount — Livestock CIF <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="MK Loan Livestock CIF (Amount)"></div>
+      <div class="row"><span class="sl">3</span><span class="label">No. of MK Taking Loan on Livestock from Bank</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Loan Livestock Bank (No)"></div>
+      <div class="row"><span class="sl">4</span><span class="label">Total Loan Amount — Livestock Bank <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="MK Loan Livestock Bank (Amount)"></div>
+      <div class="row"><span class="sl">5</span><span class="label">No. of MK Taking Loan on Agri/Horti from CIF</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Loan Agri CIF (No)"></div>
+      <div class="row"><span class="sl">6</span><span class="label">Total Loan Amount — Agri/Horti CIF <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="MK Loan Agri CIF (Amount)"></div>
+      <div class="row"><span class="sl">7</span><span class="label">No. of MK Taking Loan on Agri/Horti from Bank</span><input type="number" min="0" placeholder="0" class="num-field" data-label="MK Loan Agri Bank (No)"></div>
+      <div class="row"><span class="sl">8</span><span class="label">Total Loan Amount — Agri/Horti Bank <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="MK Loan Agri Bank (Amount)"></div>
+      <div class="row"><span class="sl">9</span><span class="label">No. of Potential Lakhpati Didi</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Potential Lakhpati Didi"></div>
+      <div class="row"><span class="sl">10</span><span class="label">No. of Lakhpati Didi</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Lakhpati Didi"></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header s6" onclick="toggleSection(this)">
+    <span>🏭</span><h2>7. Non-Farm Livelihood Report</h2>
+    <span class="badge">32 Indicators</span>
+    <span class="toggle">▼</span>
+  </div>
+  <div class="section-body">
+    <div class="subsection">
+      <div class="subsection-title">🏛 PMFME</div>
+      <div class="row"><span class="sl">1</span><span class="label">No. of SHG Members Applying PMFME</span><input type="number" min="0" placeholder="0" class="num-field" data-label="PMFME Applications"></div>
+      <div class="row"><span class="sl">2</span><span class="label">No. of Beneficiaries Repayment</span><input type="number" min="0" placeholder="0" class="num-field" data-label="PMFME Beneficiaries Repayment"></div>
+      <div class="row"><span class="sl">3</span><span class="label">Amount <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="PMFME Amount"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">💰 Mudra</div>
+      <div class="row"><span class="sl">4</span><span class="label">No. of SHG Applying Mudra Loan</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Mudra Applications"></div>
+      <div class="row"><span class="sl">5</span><span class="label">Amount <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Mudra Amount"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">🏗 PMEGP</div>
+      <div class="row"><span class="sl">6</span><span class="label">No. of SHG Applying PMEGP</span><input type="number" min="0" placeholder="0" class="num-field" data-label="PMEGP Applications"></div>
+      <div class="row"><span class="sl">7</span><span class="label">Amount <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="PMEGP Amount"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">🏦 Credit Linkage</div>
+      <div class="row"><span class="sl">8</span><span class="label">No. of Individual Enterprise Apply for Bank Loan</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Individual Bank Loan (No)"></div>
+      <div class="row"><span class="sl">9</span><span class="label">Amount — Individual Bank Loan <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Individual Bank Loan (Amount)"></div>
+      <div class="row"><span class="sl">10</span><span class="label">Dose — Individual Bank Loan</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Individual Bank Loan (Dose)"></div>
+      <div class="row"><span class="sl">11</span><span class="label">No. of Group Enterprise Apply for Bank Loan</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Group Bank Loan (No)"></div>
+      <div class="row"><span class="sl">12</span><span class="label">Amount — Group Bank Loan <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Group Bank Loan (Amount)"></div>
+      <div class="row"><span class="sl">13</span><span class="label">Dose — Group Bank Loan</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Group Bank Loan (Dose)"></div>
+      <div class="row"><span class="sl">14</span><span class="label">No. of Individual Enterprise Apply for Loan (CIF)</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Individual CIF Loan (No)"></div>
+      <div class="row"><span class="sl">15</span><span class="label">Amount — Individual CIF Loan <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Individual CIF Loan (Amount)"></div>
+      <div class="row"><span class="sl">16</span><span class="label">Dose — Individual CIF Loan</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Individual CIF Loan (Dose)"></div>
+      <div class="row"><span class="sl">17</span><span class="label">No. of Group Enterprise Apply for Loan (CIF)</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Group CIF Loan (No)"></div>
+      <div class="row"><span class="sl">18</span><span class="label">Amount — Group CIF Loan <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Group CIF Loan (Amount)"></div>
+      <div class="row"><span class="sl">19</span><span class="label">Dose — Group CIF Loan</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Group CIF Loan (Dose)"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">🏪 Non-Farm Enterprise</div>
+      <div class="row"><span class="sl">20</span><span class="label">No. of Enterprise in Reporting Month (Individual)</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Enterprise Individual"></div>
+      <div class="row"><span class="sl">21</span><span class="label">No. of Enterprise in Reporting Month (Group)</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Enterprise Group"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">📋 Formalization</div>
+      <div class="row"><span class="sl">22</span><span class="label">No. of SHG Avail FSSAI</span><input type="number" min="0" placeholder="0" class="num-field" data-label="FSSAI"></div>
+      <div class="row"><span class="sl">23</span><span class="label">No. of SHG Avail UAM</span><input type="number" min="0" placeholder="0" class="num-field" data-label="UAM"></div>
+      <div class="row"><span class="sl">24</span><span class="label">No. of SHG Avail GST</span><input type="number" min="0" placeholder="0" class="num-field" data-label="GST"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">🛍 Sales and Marketing</div>
+      <div class="row"><span class="sl">25</span><span class="label">No. of SHG Participate in Events/Fair/Melas</span><input type="number" min="0" placeholder="0" class="num-field" data-label="Events/Fair/Melas"></div>
+      <div class="row"><span class="sl">26</span><span class="label">Amount of Sales <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="Sales Amount"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">🏬 TCPC</div>
+      <div class="row"><span class="sl">27</span><span class="label">Amount of Sales in Reporting Month <span class="info-tip">In ₹</span></span><input type="number" min="0" placeholder="0.00" class="num-field" data-label="TCPC Sales Amount"></div>
+    </div>
+    <div class="subsection">
+      <div class="subsection-title">⭐ PLD (Potential Lakhpati Didi)</div>
+      <div class="row"><span class="sl">28</span><span class="label">No. of PLD under Non-Farm</span><input type="number" min="0" placeholder="0" class="num-field" data-label="PLD Non-Farm"></div>
+      <div class="row"><span class="sl">29</span><span class="label">No. of PLD Financial Linked Non-Farm</span><input type="number" min="0" placeholder="0" class="num-field" data-label="PLD Financial Linked"></div>
+      <div class="row"><span class="sl">30</span><span class="label">No. of PLD Income &lt;1 Lakh</span><input type="number" min="0" placeholder="0" class="num-field" data-label="PLD Income <1L"></div>
+      <div class="row"><span class="sl">31</span><span class="label">No. of PLD Income &gt;1 Lakh</span><input type="number" min="0" placeholder="0" class="num-field" data-label="PLD Income >1L"></div>
+      <div class="row"><span class="sl">32</span><span class="label">No. of PLD Income 2–3 Lakhs</span><input type="number" min="0" placeholder="0" class="num-field" data-label="PLD Income 2-3L"></div>
+      <div class="row"><span class="sl">33</span><span class="label">No. of PLD Income 3–5 Lakhs &amp; Above</span><input type="number" min="0" placeholder="0" class="num-field" data-label="PLD Income 3-5L+"></div>
+      <div class="row"><span class="sl">34</span><span class="label">No. of PLD Convergence with Other Line Department</span><input type="number" min="0" placeholder="0" class="num-field" data-label="PLD Convergence"></div>
+    </div>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="btn btn-reset" onclick="resetForm()">🔄 Reset Form</button>
+  <button class="btn btn-primary" onclick="validateAndPreview()">👁 Preview Data</button>
+  <button class="btn btn-success" onclick="submitToSheets()">📤 Submit to Google Sheets</button>
+</div>
+</div>
+
+<div id="previewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;overflow-y:auto;padding:20px">
+  <div style="max-width:700px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">
+    <div style="background:#1a365d;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+      <strong>📋 Data Preview — Ready to Submit</strong>
+      <span onclick="closePreview()" style="cursor:pointer;font-size:20px">✕</span>
+    </div>
+    <div id="previewContent" style="padding:16px;max-height:70vh;overflow-y:auto;font-size:12px"></div>
+    <div style="padding:14px 16px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #e2e8f0">
+      <button class="btn btn-reset" onclick="closePreview()">Cancel</button>
+      <button class="btn btn-success" onclick="submitToSheets()">✅ Confirm & Submit</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CLF_BY_BLOCK = {
+  "Mawshynrut": [
+    "SAINDUR IA KA LAWEI CLF MULTIPURPOSE COOPERATIVE SOCIETY LTD",
+    "RYMPEI BAIAR CLUSTER LEVEL FEDERATION CLF",
+    "NONGTREI IONG BI CLUSTER LEVEL FEDERATION UMSOHPIENG",
+    "KURANGSAL CLF WOMEN MULTI PURPOSE COOPERATIVE SOCIETY",
+    "JINGKIENG BASKHEM CLF NONGJRI CIRCLE",
+    "MAWJAM CLF PORLA",
+    "NONGTREI ASOR CLF"
+  ],
+  "Nongstoin": [
+    "15 SHNONG CLUSTER LEVEL FEDERATION",
+    "THWEIBIAR CLF NONGSTOIN",
+    "MAWJAMBASKHEM CLF",
+    "IAINEHSKHEM CLF",
+    "KHATWEI CLF PYNDENGREI",
+    "KHAW KYLLA CLF MAWEIT",
+    "KYRSHAN IA KA LAWEI CLF",
+    "IAIKYRSOI CLF",
+    "KYRSIEW CLF RISIANG",
+    "WANLAM JONGCHAI CLF WAHLYNGDOH"
+  ],
+  "Rambrai": [
+    "SANDAKA CLF MAWDET",
+    "KHADHYNNIEW SHNONG CLUSTER LEVEL FEDERATION",
+    "WOMEN UNITED CLF RAMBRAI",
+    "IATREILANG CLF MAWTHIR",
+    "TBEHJINGSHAI CLF MAWDOH"
+  ],
+  "Shallang": ["NIASON CLF UMDANG"],
+  "Ri-Muliang": [
+    "TWAR BAN SAN CLF KYRDUM",
+    "BIRONGDIK CLF",
+    "IATYLLI BAN ROI CLF",
+    "TENGKAME CLF"
+  ]
+};
+
+// ✅ FIX: Get today's local date correctly using local timezone (not UTC)
+function getTodayLocal() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+// ✅ FIX: Set current month for reportMonth using local time
+function getCurrentMonth() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+// ✅ FIX: No max attribute set — date field is unrestricted and always shows live today
+const submissionDateEl = document.getElementById('submissionDate');
+submissionDateEl.value = getTodayLocal();
+// Remove any max restriction so the date picker is never capped
+submissionDateEl.removeAttribute('max');
+
+// reportMonth: no max restriction either — allow any month selection
+document.getElementById('reportMonth').removeAttribute('max');
+
+function updateCLFList(){
+  const block = document.getElementById('blockName').value;
+  const clf = document.getElementById('clfName');
+  clf.innerHTML = '<option value="">-- Select CLF --</option>';
+  if(CLF_BY_BLOCK[block]){
+    CLF_BY_BLOCK[block].forEach(c=>{
+      const o = document.createElement('option');
+      o.value = o.textContent = c;
+      clf.appendChild(o);
+    });
+  }
+}
+
+function validate(el, type){
+  const v = el.value.trim();
+  if(!v || v === ''){el.classList.add('error');el.classList.remove('ok');return false;}
+  el.classList.remove('error');el.classList.add('ok');return true;
+}
+
+function toggleSection(hdr){
+  const body = hdr.nextElementSibling;
+  const isCollapsed = body.style.display === 'none';
+  body.style.display = isCollapsed ? '' : 'none';
+  hdr.classList.toggle('collapsed', !isCollapsed);
+}
+
+function collectData(){
+  const data = {
+    block: document.getElementById('blockName').value,
+    clf: document.getElementById('clfName').value,
+    month: document.getElementById('reportMonth').value,
+    reportedBy: document.getElementById('reportedBy').value,
+    submissionDate: document.getElementById('submissionDate').value,
+    timestamp: new Date().toISOString(),
+    indicators: {}
+  };
+  document.querySelectorAll('.num-field').forEach(el=>{
+    const lbl = el.dataset.label;
+    if(lbl) data.indicators[lbl] = el.value || '';
+  });
+  document.querySelectorAll('.checkbox-group').forEach(group=>{
+    const lbl = group.dataset.label;
+    const checked = Array.from(group.querySelectorAll('input[type="checkbox"]:checked')).map(cb=>cb.value);
+    if(lbl) data.indicators[lbl] = checked.length > 0 ? checked.join(', ') : '';
+  });
+  return data;
+}
+
+function validateMeta(){
+  let ok = true;
+  ['blockName','clfName','reportMonth','reportedBy','submissionDate'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el.value.trim()){el.classList.add('error');ok=false;}
+    else{el.classList.remove('error');}
+  });
+  return ok;
+}
+
+function validateAndPreview(){
+  if(!validateMeta()){showToast('⚠️ Please fill all required header fields','error');window.scrollTo({top:0,behavior:'smooth'});return;}
+  const data = collectData();
+  document.getElementById('previewContent').innerHTML = buildPreview(data);
+  document.getElementById('previewModal').style.display = 'block';
+}
+
+function buildPreview(data){
+  let h = `<div style="background:#ebf8ff;border-radius:8px;padding:12px;margin-bottom:14px">
+    <strong>Block:</strong> ${data.block} &nbsp;|&nbsp;
+    <strong>CLF:</strong> ${data.clf} &nbsp;|&nbsp;
+    <strong>Month:</strong> ${data.month}<br>
+    <strong>Reported By:</strong> ${data.reportedBy} &nbsp;|&nbsp;
+    <strong>Date:</strong> ${data.submissionDate}
+  </div>`;
+  h += `<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <tr style="background:#1a365d;color:#fff"><th style="padding:6px;text-align:left">Indicator</th><th style="padding:6px;text-align:right;width:200px">Value</th></tr>`;
+  let alt = false;
+  for(const [k,v] of Object.entries(data.indicators)){
+    if(v !== ''){
+      h += `<tr style="background:${alt?'#f7fafc':'#fff'}"><td style="padding:5px 8px;border-bottom:1px solid #e2e8f0">${k}</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-weight:600">${v}</td></tr>`;
+      alt = !alt;
+    }
+  }
+  h += `</table>`;
+  return h;
+}
+
+function closePreview(){document.getElementById('previewModal').style.display='none';}
+
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbySW36GmeixwQeEbUqX8waF9Vs7zoEQAxJhpriShumbwLnZKc-orp8s83tVgYOjto34/exec';
+
+function submitViaIframe(url, jsonString){
+  return new Promise((resolve)=>{
+    const iframeName = 'hidden_submit_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    form.target = iframeName;
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = jsonString;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    setTimeout(()=>{
+      try{document.body.removeChild(iframe);document.body.removeChild(form);}catch(e){}
+      resolve();
+    }, 6000);
+    form.submit();
+  });
+}
+
+async function submitToSheets(){
+  if(!validateMeta()){
+    showToast('⚠️ Please fill all required header fields','error');
+    closePreview();
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+  const data = collectData();
+  const jsonString = JSON.stringify(data);
+  showToast('⏳ Submitting to Google Sheets...','success');
+  try{
+    await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:jsonString});
+    closePreview();
+    showToast('✅ Data submitted successfully!','success');
+    console.log("SUBMITTED:", data);
+    setTimeout(()=>resetForm(), 2000);
+  } catch(e){
+    console.warn("fetch failed, trying iframe fallback:", e);
+    try{
+      await submitViaIframe(SHEET_URL, jsonString);
+      closePreview();
+      showToast('✅ Data submitted successfully!','success');
+      setTimeout(()=>resetForm(), 2000);
+    } catch(e2){
+      showToast('❌ Network error. Please check your connection.','error');
+    }
+  }
+}
+
+function resetForm(){
+  document.querySelectorAll('input,select,textarea').forEach(el=>{
+    if(el.type === 'checkbox'){el.checked = false;}
+    else if(el.id !== 'submissionDate'){el.value = '';}
+    el.classList.remove('error','ok');
+  });
+  document.getElementById('clfName').innerHTML = '<option value="">-- Select Block First --</option>';
+  // ✅ FIX: Reset submission date to live today using local timezone
+  document.getElementById('submissionDate').value = getTodayLocal();
+  updateProgress();
+}
+
+function showToast(msg, type){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type}`;
+  t.style.display = 'block';
+  setTimeout(()=>t.style.display='none', 3500);
+}
+
+function updateProgress(){
+  const allInputs = document.querySelectorAll('.num-field');
+  let filled = [...allInputs].filter(el=>el.value.trim()!=='').length;
+  let total = allInputs.length;
+  document.querySelectorAll('.checkbox-group').forEach(group=>{
+    total++;
+    if(group.querySelectorAll('input[type="checkbox"]:checked').length > 0) filled++;
+  });
+  document.getElementById('progressFill').style.width = `${total===0?0:Math.round((filled/total)*100)}%`;
+}
+
+document.querySelectorAll('.num-field').forEach(el=>{
+  el.addEventListener('input',()=>{
+    if(el.type==='number'&&parseFloat(el.value)<0) el.value=0;
+    if(el.value.trim()) el.classList.remove('error');
+    updateProgress();
+  });
+});
+
+document.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+  cb.addEventListener('change', updateProgress);
+});
+
+updateProgress();
+</script>
+</body>
+</html>
