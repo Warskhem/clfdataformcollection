@@ -741,14 +741,17 @@ const CLF_BY_BLOCK = {
   ],
   "Nongstoin": [
     "15 SHNONG CLUSTER LEVEL FEDERATION",
+    "DAKA BANTEI CLF",
     "THWEIBIAR CLF NONGSTOIN",
     "MAWJAMBASKHEM CLF",
     "IAINEHSKHEM CLF",
     "KHATWEI CLF PYNDENGREI",
     "KHAW KYLLA CLF MAWEIT",
+    "KYNHUN SAINDUR CLF MAWIAWET",
     "KYRSHAN IA KA LAWEI CLF",
     "IAIKYRSOI CLF",
     "KYRSIEW CLF RISIANG",
+    "SHAT JINSHAICLF LAITKSEH CLUSTER",
     "WANLAM JONGCHAI CLF WAHLYNGDOH"
   ],
   "Rambrai": [
@@ -858,6 +861,8 @@ function validateAndPreview(){
   document.getElementById('previewModal').style.display = 'block';
 }
 
+const SECTION_COLORS = { s1: '#2b6cb0', s2: '#276749', s3: '#744210', s4: '#702459', s5: '#234e52', s6: '#44337a', s7: '#c05621', s8: '#1a365d' };
+
 function buildPreview(data){
   let h = `<div style="background:#ebf8ff;border-radius:8px;padding:12px;margin-bottom:14px">
     <strong>Block:</strong> ${data.block} &nbsp;|&nbsp;
@@ -866,47 +871,94 @@ function buildPreview(data){
     <strong>Reported By:</strong> ${data.reportedBy} &nbsp;|&nbsp;
     <strong>Date:</strong> ${data.submissionDate}
   </div>`;
-  h += `<table style="width:100%;border-collapse:collapse;font-size:12px">
-    <tr style="background:#1a365d;color:#fff"><th style="padding:6px;text-align:left">Indicator</th><th style="padding:6px;text-align:right;width:200px">Value</th></tr>`;
-  let alt = false;
-  for(const [k,v] of Object.entries(data.indicators)){
-    if(v !== ''){
-      h += `<tr style="background:${alt?'#f7fafc':'#fff'}"><td style="padding:5px 8px;border-bottom:1px solid #e2e8f0">${k}</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-weight:600">${v}</td></tr>`;
-      alt = !alt;
-    }
-  }
-  h += `</table>`;
+
+  // Group indicators by section using DOM structure
+  document.querySelectorAll('.section').forEach(secEl => {
+    const headerEl = secEl.querySelector('.section-header');
+    if (!headerEl) return;
+    const icon = headerEl.querySelector('span:first-child')?.textContent || '';
+    const title = headerEl.querySelector('h2')?.textContent || '';
+    const bodyEl = secEl.querySelector('.section-body');
+    if (!bodyEl) return;
+
+    // Determine section color
+    const cls = [...headerEl.classList].find(c => SECTION_COLORS[c]) || 's1';
+    const color = SECTION_COLORS[cls];
+
+    // Collect rows preserving DOM order with section-local SL numbering
+    const rows = [];
+    let sl = 0;
+    bodyEl.querySelectorAll('.num-field, .checkbox-group').forEach(el => {
+      const label = el.dataset.label;
+      if (!label) return;
+      const raw = data.indicators[label];
+      if (raw === undefined || raw === '') return;
+      sl++;
+      const val = String(raw);
+      const isText = el.dataset.type === 'text' || el.classList.contains('checkbox-group');
+      const isNum = el.type === 'number' && !isText;
+      const inputType = isNum ? 'number' : 'text';
+      rows.push({ sl, label, value: val, inputType });
+    });
+
+    if (rows.length === 0) return;
+
+    h += `<div style="margin-bottom:14px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+      <div style="background:linear-gradient(90deg,${color},${color}dd);color:#fff;padding:9px 14px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px">${icon} ${title} <span style="margin-left:auto;font-weight:400;font-size:11px;opacity:.85">${rows.length} fields</span></div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#f7fafc"><th style="padding:4px 6px;text-align:center;width:28px;color:#a0aec0;font-size:10px">#</th><th style="padding:4px 8px;text-align:left;color:#4a5568">Indicator</th><th style="padding:4px 8px;text-align:right;color:#4a5568">Value</th><th style="padding:4px 4px;width:32px"></th></tr></thead>
+      <tbody>`;
+
+    rows.forEach((r, i) => {
+      const bg = i % 2 === 0 ? '#fff' : '#f7fafc';
+      const fid = 'pv_' + r.label.replace(/[^a-zA-Z0-9]/g, '_');
+      h += `<tr style="background:${bg}">
+        <td style="padding:3px 6px;text-align:center;color:#a0aec0;font-size:11px">${r.sl}</td>
+        <td style="padding:3px 8px;color:#2d3748">${r.label}</td>
+        <td style="padding:3px 8px;text-align:right">
+          <input type="${r.inputType}" id="${fid}" value="${r.value.replace(/"/g,'&quot;')}"
+            style="width:100%;padding:4px 6px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px;text-align:right;background:#fff"
+            onchange="updateFieldFromPreview('${r.label.replace(/'/g,"\\'")}', this.value)"
+            onfocus="this.style.borderColor='${color}';this.style.boxShadow='0 0 0 2px ${color}22'"
+            onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'">
+        </td>
+        <td style="padding:3px 4px;text-align:center">
+          <span onclick="document.getElementById('${fid}').focus()" style="cursor:pointer;color:#a0aec0;font-size:13px;transition:color .15s" onmouseover="this.style.color='${color}'" onmouseout="this.style.color='#a0aec0'">✎</span>
+        </td>
+      </tr>`;
+    });
+
+    h += `</tbody></table></div>`;
+  });
+
   return h;
+}
+
+function updateFieldFromPreview(label, value){
+  // Sync the edited value back to the original form element
+  document.querySelectorAll('.num-field').forEach(el => {
+    if (el.dataset.label === label) {
+      el.value = value;
+      el.classList.remove('error');
+      if (value.trim()) el.classList.add('ok');
+    }
+  });
+  // Sync back to checkbox group original elements
+  document.querySelectorAll('.checkbox-group').forEach(group => {
+    if (group.dataset.label === label) {
+      // For checkbox groups edited as comma-separated text in preview,
+      // uncheck all then re-check matching items
+      const items = value.split(',').map(s => s.trim()).filter(s => s);
+      group.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.checked = items.includes(cb.value);
+      });
+    }
+  });
 }
 
 function closePreview(){document.getElementById('previewModal').style.display='none';}
 
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzpNMhhb9BRvR3P3NsGVyfRsQkyvQRgHadj35gB00ST_-6ZpuJZ23GL7s-m85DTdM84/exec';
-
-function submitViaIframe(url, jsonString){
-  return new Promise((resolve)=>{
-    const iframeName = 'hidden_submit_' + Date.now();
-    const iframe = document.createElement('iframe');
-    iframe.name = iframeName;
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = url;
-    form.target = iframeName;
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'data';
-    input.value = jsonString;
-    form.appendChild(input);
-    document.body.appendChild(form);
-    setTimeout(()=>{
-      try{document.body.removeChild(iframe);document.body.removeChild(form);}catch(e){}
-      resolve();
-    }, 6000);
-    form.submit();
-  });
-}
 
 async function submitToSheets(){
   if(!validateMeta()){
@@ -918,6 +970,7 @@ async function submitToSheets(){
   const data = collectData();
   const jsonString = JSON.stringify(data);
   showToast('⏳ Submitting to Google Sheets...','success');
+  // Use fetch with no-cors mode (works from file:// without triggering iframe security warnings)
   try{
     await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:jsonString});
     closePreview();
@@ -925,15 +978,7 @@ async function submitToSheets(){
     console.log("SUBMITTED:", data);
     setTimeout(()=>resetForm(), 2000);
   } catch(e){
-    console.warn("fetch failed, trying iframe fallback:", e);
-    try{
-      await submitViaIframe(SHEET_URL, jsonString);
-      closePreview();
-      showToast('✅ Data submitted successfully!','success');
-      setTimeout(()=>resetForm(), 2000);
-    } catch(e2){
-      showToast('❌ Network error. Please check your connection.','error');
-    }
+    showToast('❌ Network error. Please check your connection.','error');
   }
 }
 
@@ -981,6 +1026,11 @@ document.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
 });
 
 updateProgress();
+
+// Detect file:// protocol and warn about limited functionality
+if (location.protocol === 'file:') {
+  console.info('ℹ️ Running from file:// — form submission uses no-cors fetch which works, but preview may not load external resources. For best results, serve files via a local web server.');
+}
 </script>
 </body>
 </html>
