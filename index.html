@@ -7,9 +7,22 @@
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#2d3748;font-size:13px}
-  .header{background:linear-gradient(135deg,#1a365d,#2b6cb0);color:#fff;padding:20px 30px;text-align:center}
-  .header h1{font-size:20px;font-weight:700;letter-spacing:.5px}
-  .header p{font-size:12px;margin-top:4px;opacity:.85}
+  .header{position:relative;background:linear-gradient(135deg,#0f1f3d 0%,#1a365d 40%,#2b6cb0 100%);color:#fff;padding:0;overflow:hidden}
+  .header::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");opacity:.5}
+  .header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#f59e0b,#3b82f6,#10b981,#ef4444);background-size:300% 100%;animation:gradientMove 6s ease infinite}
+  @keyframes gradientMove{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  .header-content{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:18px 28px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
+  .header-brand{display:flex;align-items:center;gap:16px;justify-content:center}
+  .header-emblem{width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#fbbf24);display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 15px rgba(245,158,11,.3);flex-shrink:0}
+  .header-text h1{font-size:19px;font-weight:700;letter-spacing:.3px;line-height:1.2}
+  .header-text .subtitle{font-size:11px;opacity:.8;margin-top:2px;font-weight:400}
+  .header-text .subtitle span{display:inline-block;background:rgba(255,255,255,.12);padding:1px 10px;border-radius:10px;margin-top:3px;font-size:10px;font-weight:600;letter-spacing:.5px}
+  .header-badges{display:flex;gap:8px;align-items:center}
+  .header-badge{font-size:10px;padding:4px 12px;border-radius:20px;font-weight:600;letter-spacing:.4px;white-space:nowrap}
+  .header-badge.dept{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)}
+  .header-badge.gov{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a365d}
+
+  @media(max-width:600px){.header-content{flex-direction:column;text-align:center;padding:14px 16px}.header-brand{flex-direction:column;gap:10px}.header-text h1{font-size:16px}.header-badges{width:100%;justify-content:center}}
   .meta-bar{background:#fff;padding:14px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;border-bottom:2px solid #e2e8f0;position:sticky;top:0;z-index:100;box-shadow:0 2px 6px rgba(0,0,0,.08)}
   .meta-bar .field{display:flex;flex-direction:column;gap:4px;min-width:180px}
   .meta-bar label{font-size:11px;font-weight:600;color:#4a5568;text-transform:uppercase;letter-spacing:.5px}
@@ -79,8 +92,20 @@
 <body>
 
 <div class="header">
-  <h1>📊 CLF Monthly Reporting System</h1>
-  <p>West Khasi Hills District — Data Collection Form | Fill all required fields before submitting</p>
+  <div class="header-content">
+    <div class="header-brand">
+      <div class="header-emblem">🏛️</div>
+      <div class="header-text">
+        <h1>CLF Monthly Reporting System</h1>
+        <div class="subtitle">District Mission Management Unit — West Khasi Hills, Nongstoin</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="header-badge gov">Govt. of Meghalaya</span>
+      <span class="header-badge dept">MSRLS</span>
+    </div>
+  </div>
+
 </div>
 
 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -854,9 +879,22 @@ function validateMeta(){
   return ok;
 }
 
-function validateAndPreview(){
+async function validateAndPreview(){
   if(!validateMeta()){showToast('⚠️ Please fill all required header fields','error');window.scrollTo({top:0,behavior:'smooth'});return;}
   const data = collectData();
+  showToast('⏳ Checking for existing data...','success');
+  const dup = await checkDuplicate(data.block, data.clf, data.month);
+  if (dup === true || (dup && dup.existingData)) {
+    const proceed = confirm(
+      '⚠️ DUPLICATE ENTRY EXISTS\n\n' +
+      'Data already recorded for:\n' +
+      '  CLF:   ' + data.clf + '\n' +
+      '  Month: ' + data.month + '\n\n' +
+      'Click OK to view preview and submit anyway.\n' +
+      'Click Cancel to review your data.'
+    );
+    if (!proceed) { showToast('Duplicate entry — submission cancelled','error'); return; }
+  }
   document.getElementById('previewContent').innerHTML = buildPreview(data);
   document.getElementById('previewModal').style.display = 'block';
 }
@@ -960,6 +998,75 @@ function closePreview(){document.getElementById('previewModal').style.display='n
 
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzpNMhhb9BRvR3P3NsGVyfRsQkyvQRgHadj35gB00ST_-6ZpuJZ23GL7s-m85DTdM84/exec';
 
+// ---- Duplicate entry check ----
+const DUP_CACHE = { data: null, time: 0 };
+
+const DUP_CORS_PROXIES = [
+  null,
+  'https://corsproxy.io/?url=',
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.org/?url=',
+  'https://proxy.cors.sh/'
+];
+
+async function fetchExistingRows() {
+  const now = Date.now();
+  if (DUP_CACHE.data && now - DUP_CACHE.time < 30000) return DUP_CACHE.data;
+
+  for (let pi = 0; pi < DUP_CORS_PROXIES.length; pi++) {
+    const proxy = DUP_CORS_PROXIES[pi];
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 10000);
+    try {
+      let url = SHEET_URL;
+      if (proxy) url = proxy + encodeURIComponent(url);
+      const res = await fetch(url, { method: 'GET', signal: ac.signal });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      let txt;
+      if (proxy && proxy.includes('api.allorigins.win')) {
+        try { const j = await res.clone().json(); txt = j.contents || j.body || JSON.stringify(j); }
+        catch { txt = await res.text(); }
+      } else if (proxy && proxy.includes('cors.sh')) {
+        const j = await res.json(); txt = j.body || JSON.stringify(j);
+      } else {
+        txt = await res.text();
+      }
+      let data;
+      try { data = JSON.parse(txt); } catch { continue; }
+      if (data && data.error) continue;
+      if (data && data.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
+        DUP_CACHE.data = data.data;
+        DUP_CACHE.time = Date.now();
+        return data.data;
+      }
+      return null;
+    } catch { clearTimeout(timer); }
+  }
+  return null;
+}
+
+function findColIndex(row, name) {
+  return row.findIndex(c => String(c).trim().toLowerCase() === name.toLowerCase());
+}
+
+async function checkDuplicate(block, clf, month) {
+  const rows = await fetchExistingRows();
+  if (!rows || rows.length < 2) return null; // no data yet or fetch failed
+  const h = rows[0];
+  const bi = findColIndex(h, 'Block');
+  const ci = findColIndex(h, 'CLF Name');
+  const mi = findColIndex(h, 'Reporting Month');
+  if (bi < 0 || ci < 0 || mi < 0) return null;
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (String(row[bi]).trim() === block && String(row[ci]).trim() === clf && String(row[mi]).trim() === month) {
+      return { rowIndex: i, existingData: row, headers: h };
+    }
+  }
+  return false; // no duplicate found
+}
+
 async function submitToSheets(){
   if(!validateMeta()){
     showToast('⚠️ Please fill all required header fields','error');
@@ -968,6 +1075,35 @@ async function submitToSheets(){
     return;
   }
   const data = collectData();
+
+  // Check for duplicate entry
+  showToast('⏳ Checking for existing data...','success');
+  const dup = await checkDuplicate(data.block, data.clf, data.month);
+  if (dup === true || (dup && dup.existingData)) {
+    const proceed = confirm(
+      '⚠️ DUPLICATE ENTRY DETECTED\n\n' +
+      'Data already exists for:\n' +
+      '  CLF:   ' + data.clf + '\n' +
+      '  Month: ' + data.month + '\n\n' +
+      'Click OK to submit anyway (creates a duplicate row in the sheet).\n' +
+      'Click Cancel to review your data.'
+    );
+    if (!proceed) {
+      showToast('Submission cancelled — duplicate entry avoided','error');
+      return;
+    }
+  } else if (dup === null) {
+    // Fetch failed (e.g. file:// CORS) — warn but allow
+    const proceed = confirm(
+      '⚠️ Could not verify existing data.\n\n' +
+      'The form was unable to check for duplicate entries ' +
+      '(this is expected when opening from file://).\n\n' +
+      'Click OK to submit anyway.\n' +
+      'Click Cancel to go back.'
+    );
+    if (!proceed) { showToast('Submission cancelled','error'); return; }
+  }
+
   const jsonString = JSON.stringify(data);
   showToast('⏳ Submitting to Google Sheets...','success');
   // Use fetch with no-cors mode (works from file:// without triggering iframe security warnings)
