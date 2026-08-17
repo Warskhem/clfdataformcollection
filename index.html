@@ -130,7 +130,7 @@
   </div>
   <div class="field">
     <label>CLF Name <span class="required-star">*</span></label>
-    <select id="clfName" onchange="validate(this,'select')">
+    <select id="clfName" onchange="validate(this,'select');if(getEl('draftsModal')?.style.display==='block')renderDraftList();updateDraftBadge()">
       <option value="">-- Select Block First --</option>
     </select>
   </div>
@@ -762,7 +762,7 @@
 <div id="draftsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;overflow-y:auto;padding:20px">
   <div style="max-width:820px;margin:0 auto;background:#f7fafc;border-radius:12px;overflow:hidden">
     <div style="background:#1a365d;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
-      <strong>📂 My Drafts</strong>
+      <div><strong>📂 My Drafts</strong><div class="modal-clf-label" style="font-size:11px;font-weight:400;opacity:.85;margin-top:2px">Select a CLF to view its drafts</div></div>
       <span onclick="closeDraftsPanel()" style="cursor:pointer;font-size:20px">✕</span>
     </div>
     <div style="padding:14px 16px;display:flex;gap:10px;flex-wrap:wrap;border-bottom:1px solid #e2e8f0;background:#fff">
@@ -857,6 +857,8 @@ function updateCLFList(){
       clf.appendChild(o);
     });
   }
+  if(getEl('draftsModal')?.style.display==='block') renderDraftList();
+  updateDraftBadge();
 }
 
 function validate(el, type){
@@ -1244,7 +1246,9 @@ function markDraftSubmitted(){
 }
 
 function updateDraftBadge(){
-  const n=getDrafts().filter(d=>d.status==='draft').length;
+  const currentCLF=getEl('clfName')?.value||'';
+  const allDrafts=getDrafts().filter(d=>d.status==='draft');
+  const n=currentCLF?allDrafts.filter(d=>d.meta.clf===currentCLF).length:allDrafts.length;
   const btn=getEl('openDraftsBtn');
   if(btn) btn.textContent='📂 My Drafts ('+n+')';
 }
@@ -1256,14 +1260,17 @@ function fmtDate(iso){
 
 function populateDraftFilters(){
   const drafts=getDrafts();
-  const months=[...new Set(drafts.map(d=>d.meta.month).filter(Boolean))].sort().reverse();
-  const blocks=[...new Set(drafts.map(d=>d.meta.block).filter(Boolean))].sort();
+  const currentCLF=getEl('clfName')?.value||'';
+  const currentBlock=getEl('blockName')?.value||'';
+  const clDrafts=currentCLF?drafts.filter(d=>d.meta.clf===currentCLF):drafts;
+  const months=[...new Set(clDrafts.map(d=>d.meta.month).filter(Boolean))].sort().reverse();
+  const blocks=[...new Set(clDrafts.map(d=>d.meta.block).filter(Boolean))].sort();
   const mm=getEl('draftFilterMonth'), mv=mm.value;
   mm.innerHTML='<option value="">All Months</option>'+months.map(x=>`<option>${x}</option>`).join('');
   if(mv) mm.value=mv;
   const bb=getEl('draftFilterBlock'), bv=bb.value;
   bb.innerHTML='<option value="">All Blocks</option>'+blocks.map(x=>`<option>${x}</option>`).join('');
-  if(bv) bb.value=bv;
+  if(bv) bb.value=bv; else if(currentBlock) bb.value=currentBlock;
 }
 
 function renderDraftList(){
@@ -1271,7 +1278,9 @@ function renderDraftList(){
   const fMonth=getEl('draftFilterMonth')?.value||'';
   const fBlock=getEl('draftFilterBlock')?.value||'';
   const fStatus=getEl('draftFilterStatus')?.value||'';
+  const currentCLF=getEl('clfName')?.value||'';
   let drafts=getDrafts().filter(d=>{
+    if(currentCLF && d.meta.clf!==currentCLF) return false;
     if(fMonth && d.meta.month!==fMonth) return false;
     if(fBlock && d.meta.block!==fBlock) return false;
     if(fStatus && d.status!==fStatus) return false;
@@ -1285,7 +1294,9 @@ function renderDraftList(){
   const el=getEl('draftList');
   if(!el) return;
   if(drafts.length===0){
-    el.innerHTML='<div style="text-align:center;padding:40px 20px;color:#718096"><div style="font-size:40px;margin-bottom:10px">📭</div><strong>No drafts found</strong><br><span style="font-size:12px">Fill the form and click "Save as Draft" to start one.</span></div>';
+    const currentCLF=getEl('clfName')?.value||'';
+    const clftxt=currentCLF?' for <strong>'+currentCLF+'</strong>':'';
+    el.innerHTML='<div style="text-align:center;padding:40px 20px;color:#718096"><div style="font-size:40px;margin-bottom:10px">📭</div><strong>No drafts found'+clftxt+'</strong><br><span style="font-size:12px">'+(currentCLF?'No drafts exist for this CLF.':'Select a CLF to view its drafts.')+'<br>Fill the form and click "Save as Draft" to start one.</span></div>';
     return;
   }
   el.innerHTML=drafts.map(d=>{
@@ -1323,6 +1334,9 @@ function renderDraftList(){
 function openDraftsPanel(){
   populateDraftFilters();
   renderDraftList();
+  const currentCLF=getEl('clfName')?.value||'';
+  const hdr=document.querySelector('#draftsModal .modal-clf-label');
+  if(hdr) hdr.textContent=currentCLF?'Showing drafts for: '+currentCLF:'Select a CLF to view its drafts';
   getEl('draftsModal').style.display='block';
 }
 function closeDraftsPanel(){ getEl('draftsModal').style.display='none'; }
