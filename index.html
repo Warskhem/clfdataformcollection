@@ -91,6 +91,15 @@
     .meta-bar .field{min-width:100%}
     .checkbox-grid{padding-left:24px;grid-template-columns:1fr}
   }
+  .notice-banner{background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border:1px solid #f59e0b;border-radius:10px;padding:14px 20px;margin:16px auto;max-width:1100px;display:flex;align-items:flex-start;gap:12px;font-size:12px;line-height:1.6;color:#78350f;box-shadow:0 2px 8px rgba(245,158,11,.15)}
+  .notice-banner .notice-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+  .notice-banner .notice-content{flex:1}
+  .notice-banner .notice-title{font-weight:700;font-size:13px;margin-bottom:4px;color:#92400e}
+  .notice-banner ul{margin:4px 0 0 16px;padding:0}
+  .notice-banner ul li{margin-bottom:2px}
+  .notice-banner strong{color:#92400e}
+  .notice-banner .notice-cumul{margin-top:6px;padding:6px 10px;border-radius:6px;font-weight:600;color:#1e40af;background:rgba(59,130,246,.08);border-top:1px solid rgba(245,158,11,.3)}
+  @media(max-width:600px){.notice-banner{margin:12px 14px;padding:10px 14px;font-size:11px}.notice-banner .notice-title{font-size:12px}}
 </style>
 </head>
 <body>
@@ -112,6 +121,21 @@
     </div>
   </div>
 
+</div>
+
+<div class="notice-banner" id="dataEntryNotice">
+  <div class="notice-icon">📋</div>
+  <div class="notice-content">
+    <div class="notice-title">IMPORTANT NOTE — MONTHLY DATA ENTRY</div>
+    <div>Please enter data <strong>only for the specific reporting month</strong>. Do <strong>NOT</strong> enter or carry forward data from previous months.</div>
+    <ul>
+      <li><strong>April:</strong> Enter only the data for April.</li>
+      <li><strong>May:</strong> Enter only the data for May. Do not re-enter April data.</li>
+      <li><strong>June:</strong> Enter only the data for June. Do not re-enter April or May data.</li>
+      <li>Continue the same process for every subsequent month.</li>
+    </ul>
+    <div class="notice-cumul">📊 Cumulative Count: The Cumulative Count will be calculated automatically by the Dashboard, starting from April and adding the monthly data sequentially.</div>
+  </div>
 </div>
 
 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
